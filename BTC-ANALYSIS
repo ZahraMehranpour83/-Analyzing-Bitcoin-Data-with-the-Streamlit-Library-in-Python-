@@ -1,0 +1,104 @@
+import numpy as np
+import pandas as pd
+from PIL import Image
+import seaborn as sns
+import yfinance as yf
+import streamlit as st
+import plotly.graph_objs as go
+from news_scrap1 import df_scrap1
+from news_scrap2 import df_scrap2
+from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+###################################################################################################
+#TITLE,DATA
+st.title("BTC")
+df = yf.download("BTC-USD", start="2023-10-15", end="2024-10-15")
+df["Date"] = df.index
+df["shadow"] = df["High"] - df["Low"]
+df["Benefit"] = df["Close"] - df["Open"]
+df["Color"] = df["Benefit"].apply(lambda bnf: "green" if bnf >= 0 else "red")
+st.write(df)
+###################################################################################################
+#CMD
+cmd=st.selectbox(label="TypeAnalysis & News",options=["News","Descriptive","Exploratory","Inferential"])
+if st.button("test"):
+  st.text(cmd)
+###################################################################################################
+#NEWS
+if cmd=="News":
+    image = Image.open("C:/Users/Zahra/Downloads/Bitcoin.svg.png")
+    st.image(image)
+    st.write(df_scrap1)
+    st.write(df_scrap2)
+###################################################################################################
+#DESCRIPTIVE
+if cmd=="Descriptive":
+ st.plotly_chart(
+     go.Figure(go.Candlestick(
+         x=df["Date"],
+         open=df["Open"],
+         close=df["Close"],
+         low=df["Low"],
+         high=df["High"]
+     ))
+ )
+###################################################################################################
+#EXPLORATORY
+if cmd=="Exploratory":
+     data=yf.download("BTC-USD",start="2023-10-15",end= "2024-10-15")
+     pairplot_fig=sns.pairplot(data)
+     st.pyplot(pairplot_fig)
+#HEATMAP
+
+     numeric_df= df.select_dtypes(include='number')
+     corr=numeric_df.corr()
+     heatmap=go.Figure(data=go.Heatmap(
+         z=corr.values,
+         x=corr.columns,
+         y=corr.columns,
+         colorscale="YlGnBu",
+         zmin=-1,
+         zmax=1
+
+     ))
+     st.plotly_chart(heatmap)
+#PCA
+     st.title("Red dots indicate outliers")
+     data=data.dropna()
+     data.reset_index(inplace=True)
+     features=['Open','High','Low','Close','Volume']
+     Data=data[features]
+     scaler=StandardScaler()
+     scaled_Data=scaler.fit_transform(Data)
+     pca=PCA(n_components=3)
+     pca_data=pca.fit_transform(scaled_Data)
+     iso=IsolationForest(contamination=0.05,random_state=42)
+     pred=iso.fit_predict(pca_data)
+     colors=np.where(pred==-1,'red','blue')
+     fig=plt.figure()
+     ax=fig.add_subplot(111,projection="3d")
+     scatter=ax.scatter(pca_data[:,0],pca_data[:,1],pca_data[:,2],c=colors)
+     st.pyplot(fig)
+##################################################################################
+#INFORENTIAL
+if cmd =="Inferential":
+    st.title("The LinearRegression indicates an increase in price")
+    data = yf.download("BTC-USD", start="2023-10-15", end="2024-10-15")
+    data=data.reset_index()
+    data['Date_ordinal']:pd.to_datetime=(data['Date']).map(pd.Timestamp.toordinal)
+    x=data['Date_ordinal'].values.reshape(-1,1)
+    y=data['Close'].values.reshape(-1,1)
+    model=LinearRegression()
+    model.fit(x,y)
+    y_pred=model.predict(x)
+    fig,ax=plt.subplots()
+    ax.plot(data['Date'],y,label='real_price')
+    ax.plot(data['Date'],y_pred,color='red',label='LinearRegression')
+    ax.set_xlabel('date')
+    ax.set_ylabel('price')
+    ax.legend()
+    st.pyplot(fig)
+###################################################################################################
