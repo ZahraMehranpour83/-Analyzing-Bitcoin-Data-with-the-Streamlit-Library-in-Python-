@@ -1,0 +1,25 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+from selenium.webdriver.chrome.options import Options
+import pandas as pd
+data=[]
+options = Options()
+options.add_argument("--headless")
+driver = webdriver.Chrome(options=options)
+
+driver.get("https://arzdigital.com/blog/category/guides/bitcoin-guides/")
+time.sleep(5)
+
+
+try:
+    news_box = driver.find_element(By.CLASS_NAME, "arz-last-post__link-box")
+    title = news_box.find_element(By.CLASS_NAME, "arz-last-post__title").text
+    summary = news_box.find_element(By.CLASS_NAME, "arz-last-post__text").text
+    data.append({'title':title,'summary':summary,'link':"https://arzdigital.com/blog/free-bitcoin-sites/}"})
+
+except Exception as e:
+    print("error", e)
+    driver.quit()
+df_scrap1=pd.DataFrame(data)
+print(df_scrap1)
