@@ -1,0 +1,35 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+import pandas as pd
+from selenium.webdriver.chrome.options import Options
+
+options = Options()
+options.add_argument("--headless")
+driver = webdriver.Chrome(options=options)
+
+url = "https://nobitex.ir/mag/analysis-will-bitcoin-bottom-at-70k/"
+driver.get(url)
+time.sleep(5)
+
+data = []
+
+try:
+    title = driver.find_element(By.TAG_NAME, "h1").text
+
+    content = driver.find_element(By.CLASS_NAME, "entry-content").text
+
+    data.append({
+      "title": title,
+        "text": content,
+        "link": url
+    })
+
+except Exception as e:
+    print("error", e)
+
+driver.quit()
+
+#  DataFrame
+df_scrap2 = pd.DataFrame(data)
+print(df_scrap2)
